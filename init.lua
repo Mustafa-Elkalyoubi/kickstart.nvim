@@ -5,7 +5,7 @@ vim.g.neovide_fullscreen = true
 
 vim.opt.termguicolors = true
 
-vim.keymap.set('i', '<C-BS>', '<Esc>dbi', { noremap = true, silent = true, desc = 'delete from cursor to beginning word' })
+vim.keymap.set('i', '<C-BS>', '<Esc>dbxi', { noremap = true, silent = true, desc = 'delete from cursor to beginning word' })
 
 vim.keymap.set('n', '<A-j>', ':m .+1<CR>==', { desc = 'move line up(n)' })
 vim.keymap.set('n', '<A-k>', ':m .-2<CR>==', { desc = 'move line down(n)' })
@@ -344,6 +344,7 @@ require('lazy').setup({
 
       -- See `:help telescope.builtin`
       local builtin = require 'telescope.builtin'
+      local action_state = require 'telescope.actions.state'
       vim.keymap.set('n', '<leader>sh', builtin.help_tags, { desc = '[S]earch [H]elp' })
       vim.keymap.set('n', '<leader>sk', builtin.keymaps, { desc = '[S]earch [K]eymaps' })
       -- vim.keymap.set('n', '<leader>sf', builtin.find_files, { desc = '[S]earch [F]iles' })
@@ -354,7 +355,30 @@ require('lazy').setup({
       vim.keymap.set('n', '<leader>sd', builtin.diagnostics, { desc = '[S]earch [D]iagnostics' })
       vim.keymap.set('n', '<leader>sr', builtin.resume, { desc = '[S]earch [R]esume' })
       vim.keymap.set('n', '<leader>s.', builtin.oldfiles, { desc = '[S]earch Recent Files ("." for repeat)' })
-      vim.keymap.set('n', '<leader><leader>', builtin.buffers, { desc = '[ ] Find existing buffers' })
+      -- vim.keymap.set('n', '<leader><leader>', builtin.buffers, { desc = '[ ] Find existing buffers' })
+
+      vim.keymap.set('n', '<leader><leader>', function()
+        builtin.buffers({
+          initial_mode = 'normal',
+          attach_mappings = function(prompt_bufnr, map)
+            local delete_buf = function()
+              local current_picker = action_state.get_current_picker(prompt_bufnr)
+              current_picker:delete_selection(function(selection)
+                vim.api.nvim_buf_delete(selection.bufnr, { force = true })
+              end)
+            end
+
+            map('n', '<c-d>', delete_buf)
+
+            return true
+          end,
+        }, {
+          sort_lastused = true,
+          sort_mru = true,
+          theme = 'dropdown',
+          desc = '[ ] Find existing buffers',
+        })
+      end)
 
       -- Slightly advanced example of overriding default behavior and theme
       vim.keymap.set('n', '<leader>/', function()
@@ -441,6 +465,7 @@ require('lazy').setup({
       --    That is to say, every time a new file is opened that is associated with
       --    an lsp (for example, opening `main.rs` is associated with `rust_analyzer`) this
       --    function will be executed to configure the current buffer
+      --
       vim.api.nvim_create_autocmd('LspAttach', {
         group = vim.api.nvim_create_augroup('kickstart-lsp-attach', { clear = true }),
         callback = function(event)
@@ -582,6 +607,12 @@ require('lazy').setup({
       local capabilities = vim.lsp.protocol.make_client_capabilities()
       capabilities = vim.tbl_deep_extend('force', capabilities, require('cmp_nvim_lsp').default_capabilities())
 
+      -- Setup required for ufo
+      capabilities.textDocument.foldingRange = {
+        dynamicRegistration = false,
+        lineFoldingOnly = true,
+      }
+
       -- Enable the following language servers
       --  Feel free to add/remove any LSPs that you want here. They will automatically be installed.
       --
@@ -593,7 +624,11 @@ require('lazy').setup({
       --        For example, to see the options for `lua_ls`, you could go to: https://luals.github.io/wiki/settings/
       local servers = {
         -- clangd = {},
-        -- gopls = {},
+        gopls = {
+          completeUnimported = true,
+          usePlaceholders = true,
+          analyses = {},
+        },
         -- pyright = {},
         -- rust_analyzer = {},
         -- ... etc. See `:help lspconfig-all` for a list of all the pre-configured LSPs
