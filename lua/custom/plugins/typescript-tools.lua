@@ -17,4 +17,6 @@ return {
   keys = {
     { '<C-S-o>', '<cmd>TSToolsOrganizeImports<cr>', desc = 'Sorts and removes unused imports' },
   },
+
+  -- enabled = false,
 }
