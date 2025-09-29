@@ -11,6 +11,10 @@ return {
           includeInlayVariableTypeHints = true,
           includeInlayFunctionLikeReturnTypeHints = true,
         },
+        jsx_close_tag = {
+          enable = true,
+          filetypes = { 'javascriptreact', 'typescriptreact' },
+        },
       },
     }
   end,
