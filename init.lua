@@ -146,6 +146,8 @@ else
   --   and `:help lua-options-guide`
   vim.o.list = true
   vim.opt.listchars = { tab = '» ', trail = '·', nbsp = '␣' }
+  vim.opt.shiftwidth = 2
+  vim.opt.tabstop = 2
 
   -- Preview substitutions live, as you type!
   vim.o.inccommand = 'split'
@@ -572,7 +574,7 @@ else
 
             -- Execute a code action, usually your cursor needs to be on top of an error
             -- or a suggestion from your LSP for this to activate.
-            map('ca', vim.lsp.buf.code_action, '[C]ode [A]ction', { 'n', 'x' })
+            map('<leader>ca', vim.lsp.buf.code_action, '[C]ode [A]ction', { 'n', 'x' })
 
             -- Find references for the word under your cursor.
             map('gr', require('telescope.builtin').lsp_references, '[G]oto [R]eferences')
@@ -723,7 +725,7 @@ else
           --    https://github.com/pmizio/typescript-tools.nvim
           --
           -- But for many setups, the LSP (`ts_ls`) will work just fine
-          -- ts_ls = {},
+          ts_ls = {},
           -- vtsls = {},
 
           lua_ls = {
@@ -746,6 +748,22 @@ else
               dotnet_search_reference_assemblies = true,
             },
           },
+          lemminx = {
+            settings = {
+              xml = {
+                schemas = {
+                  {
+                    fileMatch = { '*.csproj' },
+                    url = 'https://raw.githubusercontent.com/dotnet/msbuild/v17.14.13/src/MSBuild/Microsoft.Build.xsd',
+                    ignoredNamespaces = { 'http://schemas.microsoft.com/developer/msbuild/2003' },
+                  },
+                },
+              },
+            },
+          },
+          dockerls = {},
+          somesass_ls = {},
+          eslint_d = {},
         }
 
         -- Ensure the servers and tools above are installed
@@ -799,31 +817,39 @@ else
         },
       },
       opts = {
-        notify_on_error = false,
-        format_on_save = function(bufnr)
-          -- Disable "format_on_save lsp_fallback" for languages that don't
-          -- have a well standardized coding style. You can add additional
-          -- languages here or re-enable it for the disabled ones.
-          local disable_filetypes = { c = true, cpp = true, c_sharp = true, razor = true, csharp = true, cs = true }
-          if disable_filetypes[vim.bo[bufnr].filetype] then
-            return nil
-          else
-            return {
-              timeout_ms = 500,
-              lsp_format = 'fallback',
-            }
-          end
-        end,
+        notify_on_error = true,
+        format_on_save = false,
+        -- function(bufnr)
+        --   -- Disable "format_on_save lsp_fallback" for languages that don't
+        --   -- have a well standardized coding style. You can add additional
+        --   -- languages here or re-enable it for the disabled ones.
+        --   local disable_filetypes = { c = true, cpp = true, c_sharp = true, razor = true, csharp = true, cs = true }
+        --   if disable_filetypes[vim.bo[bufnr].filetype] then
+        --     return nil
+        --   else
+        --     return {
+        --       timeout_ms = 500,
+        --       lsp_format = 'fallback',
+        --     }
+        --   end
+        -- end,
+        default_format_opts = {
+          timeout_ms = 10000,
+          stop_after_first = true,
+        },
         formatters_by_ft = {
           lua = { 'stylua' },
           -- Conform can also run multiple formatters sequentially
           -- python = { "isort", "black" },
           --
-          -- You can use 'stop_after_first' to run the first available formatter from the list
-          javascript = { 'prettierd', 'prettier', stop_after_first = true },
-          javascriptreact = { 'prettierd', 'prettier', stop_after_first = true },
-          typescript = { 'prettierd', 'prettier', stop_after_first = true },
-          typescriptreact = { 'prettierd', 'prettier', stop_after_first = true },
+          javascript = { 'prettier' },
+          javascriptreact = { 'prettier' },
+          typescript = { 'prettier' },
+          typescriptreact = { 'prettier' },
+          xml = { 'xmlformatter' },
+          css = { 'prettier' },
+          scss = { 'prettier' },
+          razor = { 'prettier' },
         },
       },
     },
@@ -864,7 +890,6 @@ else
       config = function()
         --- @type blink.cmp.Config
         local conf = {
-
           keymap = {
             -- 'default' (recommended) for mappings similar to built-in completions
             --   <c-y> to accept ([y]es) the completion.
@@ -902,6 +927,26 @@ else
             -- By default, you may press `<c-space>` to show the documentation.
             -- Optionally, set `auto_show = true` to show the documentation after a delay.
             documentation = { auto_show = false, auto_show_delay_ms = 500 },
+
+            -- Colorful Menu
+            menu = {
+              draw = {
+                treesitter = { 'lsp' },
+                -- We don't need label_description now because label and label_description are already
+                -- combined together in label by colorful-menu.nvim.
+                columns = { { 'kind_icon' }, { 'label', gap = 1 } },
+                components = {
+                  label = {
+                    text = function(ctx)
+                      return require('colorful-menu').blink_components_text(ctx)
+                    end,
+                    highlight = function(ctx)
+                      return require('colorful-menu').blink_components_highlight(ctx)
+                    end,
+                  },
+                },
+              },
+            },
           },
 
           sources = {
@@ -942,26 +987,44 @@ else
       end,
     },
 
-    { -- You can easily change to a different colorscheme.
-      -- Change the name of the colorscheme plugin below, and then
-      -- change the command in the config to whatever the name of that colorscheme is.
-      --
-      -- If you want to see what colorschemes are already installed, you can use `:Telescope colorscheme`.
-      'folke/tokyonight.nvim',
-      priority = 1000, -- Make sure to load this before all the other start plugins.
+    -- { -- You can easily change to a different colorscheme.
+    --   -- Change the name of the colorscheme plugin below, and then
+    --   -- change the command in the config to whatever the name of that colorscheme is.
+    --   --
+    --   -- If you want to see what colorschemes are already installed, you can use `:Telescope colorscheme`.
+    --   'folke/tokyonight.nvim',
+    --   priority = 1000, -- Make sure to load this before all the other start plugins.
+    --   config = function()
+    --     ---@diagnostic disable-next-line: missing-fields
+    --     require('tokyonight').setup {
+    --       transparent = true,
+    --       styles = {
+    --         comments = { italic = true },
+    --       },
+    --     }
+    --
+    --     -- Load the colorscheme here.
+    --     -- Like many other themes, this one has different styles, and you could load
+    --     -- any other, such as 'tokyonight-storm', 'tokyonight-moon', or 'tokyonight-day'.
+    --     vim.cmd.colorscheme 'tokyonight-storm'
+    --   end,
+    -- },
+
+    {
+      'EdenEast/nightfox.nvim',
+      priority = 1000,
       config = function()
-        ---@diagnostic disable-next-line: missing-fields
-        require('tokyonight').setup {
-          transparent = true,
-          styles = {
-            comments = { italic = true },
+        require('nightfox').setup {
+          options = {
+            transparent = true,
+
+            styles = {
+              comments = 'italic',
+            },
           },
         }
 
-        -- Load the colorscheme here.
-        -- Like many other themes, this one has different styles, and you could load
-        -- any other, such as 'tokyonight-storm', 'tokyonight-moon', or 'tokyonight-day'.
-        vim.cmd.colorscheme 'tokyonight-storm'
+        vim.cmd 'colorscheme Carbonfox'
       end,
     },
 
