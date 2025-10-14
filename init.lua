@@ -764,6 +764,8 @@ else
           dockerls = {},
           somesass_ls = {},
           eslint_d = {},
+          yamlls = {},
+          -- nginx_language_server = {},
         }
 
         -- Ensure the servers and tools above are installed
@@ -987,46 +989,7 @@ else
       end,
     },
 
-    -- { -- You can easily change to a different colorscheme.
-    --   -- Change the name of the colorscheme plugin below, and then
-    --   -- change the command in the config to whatever the name of that colorscheme is.
-    --   --
-    --   -- If you want to see what colorschemes are already installed, you can use `:Telescope colorscheme`.
-    --   'folke/tokyonight.nvim',
-    --   priority = 1000, -- Make sure to load this before all the other start plugins.
-    --   config = function()
-    --     ---@diagnostic disable-next-line: missing-fields
-    --     require('tokyonight').setup {
-    --       transparent = true,
-    --       styles = {
-    --         comments = { italic = true },
-    --       },
-    --     }
-    --
-    --     -- Load the colorscheme here.
-    --     -- Like many other themes, this one has different styles, and you could load
-    --     -- any other, such as 'tokyonight-storm', 'tokyonight-moon', or 'tokyonight-day'.
-    --     vim.cmd.colorscheme 'tokyonight-storm'
-    --   end,
-    -- },
-
-    {
-      'EdenEast/nightfox.nvim',
-      priority = 1000,
-      config = function()
-        require('nightfox').setup {
-          options = {
-            transparent = true,
-
-            styles = {
-              comments = 'italic',
-            },
-          },
-        }
-
-        vim.cmd 'colorscheme Carbonfox'
-      end,
-    },
+    require 'custom.theme',
 
     -- Highlight todo, notes, etc in comments
     { 'folke/todo-comments.nvim', event = 'VimEnter', dependencies = { 'nvim-lua/plenary.nvim' }, opts = { signs = false } },
