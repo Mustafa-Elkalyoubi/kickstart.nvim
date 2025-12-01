@@ -309,7 +309,7 @@ local c = {
     hl = 'UserSLAlt',
   },
   fileinfo = {
-    provider = { name = 'file_info', opts = { type = 'base-only' } },
+    provider = { name = 'file_info', opts = { type = 'unique-short' } },
     hl = 'UserSLAlt',
     left_sep = { str = ' ', hl = 'UserSLAltSep' },
     right_sep = { str = ' ', hl = 'UserSLAltSep' },

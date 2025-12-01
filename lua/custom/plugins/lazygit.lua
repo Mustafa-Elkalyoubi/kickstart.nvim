@@ -18,4 +18,12 @@ return {
   keys = {
     { '<leader>lg', '<cmd>LazyGit<cr>', desc = 'LazyGit' },
   },
+
+  -- config = function()
+  --   require('telescope').load_extension 'lazygit'
+  --
+  --   vim.keymap.set('n', '<leader>tlg', function()
+  --     require('telescope').extensions.lazygit.lazygit()
+  --   end, { desc = '[T]elescope [L]azy[G]it' })
+  -- end,
 }

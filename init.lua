@@ -67,7 +67,14 @@ else
 
   vim.opt.termguicolors = true
 
+  vim.keymap.set('x', '/', '<Esc>/\\%V', { desc = 'search from selection' })
+
   vim.keymap.set('i', '<C-BS>', '<Esc>dbxi', { noremap = true, silent = true, desc = 'delete from cursor to beginning word' })
+
+  vim.keymap.set('v', '<Leader>p', '"0p', { desc = '[p]aste without replacing register' })
+
+  vim.keymap.set('n', '<tab>', ':tabnext<Return>', { noremap = true, silent = true })
+  vim.keymap.set('n', '<s-tab>', ':tabprev<Return>', { noremap = true, silent = true })
 
   vim.keymap.set('n', '<A-j>', ':m .+1<CR>==', { desc = 'move line up(n)' })
   vim.keymap.set('n', '<A-k>', ':m .-2<CR>==', { desc = 'move line down(n)' })
@@ -379,6 +386,8 @@ else
 
         -- Useful for getting pretty icons, but requires a Nerd Font.
         { 'nvim-tree/nvim-web-devicons', enabled = vim.g.have_nerd_font },
+
+        'debugloop/telescope-undo.nvim',
       },
       config = function()
         -- Telescope is a fuzzy finder that comes with a lot of different things that
@@ -417,11 +426,13 @@ else
               require('telescope.themes').get_dropdown(),
             },
           },
+          -- undo = {},
         }
 
         -- Enable Telescope extensions if they are installed
         pcall(require('telescope').load_extension, 'fzf')
         pcall(require('telescope').load_extension, 'ui-select')
+        pcall(require('telescope').load_extension, 'undo')
 
         -- See `:help telescope.builtin`
         local builtin = require 'telescope.builtin'
@@ -437,6 +448,7 @@ else
         vim.keymap.set('n', '<leader>sr', builtin.resume, { desc = '[S]earch [R]esume' })
         vim.keymap.set('n', '<leader>s.', builtin.oldfiles, { desc = '[S]earch Recent Files ("." for repeat)' })
         -- vim.keymap.set('n', '<leader><leader>', builtin.buffers, { desc = '[ ] Find existing buffers' })
+        vim.keymap.set('n', '<leader>u', '<cmd>Telescope undo<cr>')
 
         vim.keymap.set('n', '<leader><leader>', function()
           builtin.buffers({
@@ -523,6 +535,17 @@ else
 
         -- Allows extra capabilities provided by blink.cmp
         'saghen/blink.cmp',
+        {
+          'rachartier/tiny-code-action.nvim',
+          dependencies = {
+            { 'nvim-lua/plenary.nvim' },
+
+            -- optional picker via telescope
+            { 'nvim-telescope/telescope.nvim' },
+          },
+          event = 'LspAttach',
+          opts = {},
+        },
       },
       config = function()
         -- Brief aside: **What is LSP?**
@@ -574,10 +597,36 @@ else
 
             -- Execute a code action, usually your cursor needs to be on top of an error
             -- or a suggestion from your LSP for this to activate.
-            map('<leader>ca', vim.lsp.buf.code_action, '[C]ode [A]ction', { 'n', 'x' })
+            -- map('<leader>ca', vim.lsp.buf.code_action, '[C]ode [A]ction', { 'n', 'x' })
+            vim.keymap.set({ 'n', 'x' }, '<leader>ca', function()
+              require('tiny-code-action').code_action()
+            end, { noremap = true, silent = true, buffer = event.buf, desc = 'LSP: [C]ode [A]ction' })
 
-            -- Find references for the word under your cursor.
-            map('gr', require('telescope.builtin').lsp_references, '[G]oto [R]eferences')
+            -- -- Find references for the word under your cursor.
+            -- map('gr', require('telescope.builtin').lsp_references, '[G]oto [R]eferences')
+
+            map('gr', function()
+              require('telescope.builtin').lsp_references {
+                entry_maker = function(entry)
+                  local icon, hl = require('nvim-web-devicons').get_icon(entry.filename)
+
+                  local display = string.format('%s  %s:%d:%d: %s', icon or '', entry.filename, entry.lnum, entry.col, entry.text)
+                  -- local filename = vim.fn.fnamemodify(entry.filename, ':t') -- get only the filename
+                  -- local display = string.format('%s:%d:%d: %s', filename, entry.lnum, entry.col, entry.text)
+
+                  return {
+                    value = entry,
+                    display = display,
+                    ordinal = entry.filename .. ' ' .. entry.text,
+                    filename = entry.filename,
+                    lnum = entry.lnum,
+                    col = entry.col,
+                    text = entry.text,
+                    hl = hl,
+                  }
+                end,
+              }
+            end, '[G]oto [R]eferences')
 
             -- Jump to the implementation of the word under your cursor.
             --  Useful when your language has ways of declaring types without an actual implementation.
@@ -749,6 +798,7 @@ else
             },
           },
           lemminx = {
+            filetypes = { 'kml', 'xml', 'xsd', 'xsl', 'xslt', 'svg' },
             settings = {
               xml = {
                 schemas = {
@@ -762,10 +812,20 @@ else
             },
           },
           dockerls = {},
-          somesass_ls = {},
+          somesass_ls = {
+            filetypes = { 'sass', 'scss', 'less', 'css' },
+            root_markers = { '.git', '.package.json' },
+            settings = {
+              suggestAllFromOpenDocument = true,
+              lint = {
+                unknownAtRules = 'ignore',
+              },
+            },
+          },
           eslint_d = {},
           yamlls = {},
           -- nginx_language_server = {},
+          bashls = {},
         }
 
         -- Ensure the servers and tools above are installed
@@ -849,6 +909,7 @@ else
           typescript = { 'prettier' },
           typescriptreact = { 'prettier' },
           xml = { 'xmlformatter' },
+          kml = { 'xmlformatter' },
           css = { 'prettier' },
           scss = { 'prettier' },
           razor = { 'prettier' },
@@ -1125,9 +1186,9 @@ else
   -- The line beneath this is called `modeline`. See `:help modeline`
   -- vim: ts=2 sts=2 sw=2 et
 
-  require('neotest').setup {
-    adapters = {
-      require 'neotest-dotnet',
-    },
-  }
+  -- require('neotest').setup {
+  --   adapters = {
+  --     require 'neotest-dotnet',
+  --   },
+  -- }
 end
